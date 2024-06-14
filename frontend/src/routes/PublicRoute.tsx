@@ -1,26 +1,39 @@
-import React from "react";
-import { useAuth } from "@/context/authContext";
-import Router from "next/router";
-import { useRouter } from 'next/navigation'
-interface IPublicRouteProps {
-    children: React.ReactNode;
+import React, { ReactNode } from "react";
+import { Route, Redirect, RouteProps } from "react-router-dom";
+import { useAuth } from "../contexts/authContext";
+import { tokenKey } from "../constants/common";
+import { Cookies } from "react-cookie";
+
+interface Props {
+    children: ReactNode;
 }
 
-const PublicRoute = ({ children }: IPublicRouteProps) => {
+async function getToken() {
+    const cookies = new Cookies();
+    return await cookies.get(tokenKey);
+}
+
+const PublicRoute = ({ children, ...rest }: Props & RouteProps) => {
     const { isAuthenticated } = useAuth();
-    const Router = useRouter();
+    const token = getToken();
 
-    React.useEffect(() => {
-        if (isAuthenticated) {
-            Router.push("/home");
-        }
-    }, [isAuthenticated]);
-
-    if (isAuthenticated) {
-        return null;
-    }
-
-    return <React.Fragment>{children}</React.Fragment>;
+    return (
+        <Route
+            {...rest}
+            render={({ location }) =>
+                isAuthenticated && !!token ? (
+                    <Redirect
+                        to={{
+                            pathname: "/home",
+                            state: { from: location },
+                        }}
+                    />
+                ) : (
+                    children
+                )
+            }
+        />
+    );
 };
 
 export default PublicRoute;

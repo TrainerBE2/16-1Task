@@ -3,7 +3,6 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useEffect } from 'react';
 import Illustration from '../../components/404Illustration/404Illustration';
-import ThemeDefaultComponent from "../../components/ThemeDefaultComponent/ThemeDefaultComponent";
 import React from 'react';
 
 

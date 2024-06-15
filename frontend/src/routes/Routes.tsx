@@ -5,7 +5,7 @@ import Login from "../pages/login/page";
 import Register from "../pages/register/page";
 import PrivateRoute from "./PrivateRoute";
 import PublicRoute from "./PublicRoute";
-import Halaman404 from "../pages/Halaman404/Halaman404";
+import Halaman404 from "../pages/404page/page";
 import Home from "../pages/home/page";
 import Lists from "../pages/lists/page";
 import Boards from "../pages/boards/page";

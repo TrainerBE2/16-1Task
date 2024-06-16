@@ -331,7 +331,7 @@ const getDate = (req, res) => {
   const list_card_id = req.params.list_card_id;
 
   const query = `
-  SELECT u.username AS adder_username, u.email AS adder_email, lc.adder_id, lc.deadline, lc.created_at, lc.updated_at
+  SELECT lc.id, u.username AS adder_username, u.email AS adder_email, lc.adder_id, lc.deadline, lc.created_at, lc.updated_at
   FROM tbl_users u
   JOIN tbl_list_card_dates lc ON u.id = lc.adder_id
   WHERE lc.list_card_id = ?;  

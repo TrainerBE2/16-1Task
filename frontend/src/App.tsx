@@ -28,19 +28,18 @@ function App(props: MyAppProps) {
     emotionCache = clientSideEmotionCache,
   } = props;
 
-  if (process.env.NODE_ENV === "production") {
+  if (true) {
     console.log = () => { };
     console.error = () => { };
     console.debug = () => { };
   }
+
   return (
     <ThemeProvider theme={theme}>
       <QueryClientProvider client={queryClient}>
         <CookiesProvider>
           <CacheProvider value={emotionCache}>
-            <AppProvider>
-              <Routes />
-            </AppProvider>
+            <Routes />
           </CacheProvider>
         </CookiesProvider>
         <ReactQueryDevtools

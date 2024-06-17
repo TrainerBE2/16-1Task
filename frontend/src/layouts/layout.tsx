@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useHistory, useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
 import List from "@mui/material/List";
 import Stack from "@mui/material/Stack";
@@ -46,6 +46,7 @@ interface Props {
 
 export default function PageLayout(props: Props) {
     const [isLoading, setLoading] = React.useState<boolean>(false);
+    const history = useHistory();
     const [isOpenModalLogout, setIsOpenModalLogout] = React.useState(false);
     const [isOpenModalInv, setIsOpenModalInv] = React.useState(false);
     const [isOpenModalClear, setIsOpenModalClear] = React.useState(false);
@@ -233,7 +234,7 @@ export default function PageLayout(props: Props) {
                 if (!dataN.errno) {
                     Swal.fire({
                         title: "Invitation Accepted",
-                        position: "top-end",
+                        position: "bottom-end",
                         showConfirmButton: false,
                         icon: "success",
                         toast: true,
@@ -272,7 +273,7 @@ export default function PageLayout(props: Props) {
                 if (!dataN.errno) {
                     Swal.fire({
                         title: "Invitation Refused",
-                        position: "top-end",
+                        position: "bottom-end",
                         showConfirmButton: false,
                         icon: "success",
                         toast: true,
@@ -311,7 +312,7 @@ export default function PageLayout(props: Props) {
                 if (!dataN.errno) {
                     Swal.fire({
                         title: "Notification Cleared",
-                        position: "top-end",
+                        position: "bottom-end",
                         showConfirmButton: false,
                         icon: "success",
                         toast: true,
@@ -360,6 +361,7 @@ export default function PageLayout(props: Props) {
                     <ListItemButton
                         component={Link}
                         to="/home"
+                        onClick={() => handleExpand(-1)}
                         selected={pathName === "/home"}
                         sx={{
                             paddingY: 2,
@@ -432,7 +434,7 @@ export default function PageLayout(props: Props) {
                                                 color: "#7C8883",
                                             }}
                                         >
-                                            {dat.workspace_name}
+                                            {dat.workspace_name} {dat.role_name !== "owner" && "(Guest)"}
                                         </Typography>
                                     }
                                 />
@@ -567,52 +569,54 @@ export default function PageLayout(props: Props) {
                                                 : "#7C8883"} />
                                         </IconButton>
                                     </ListItemButton>
-                                    <ListItemButton
-                                        onClick={() => handleExpand(dat.workspace_id)}
-                                        component={Link}
-                                        to="/home/settings"
-                                        selected={
-                                            pathName === "/home/settings" && workspaceId === dat.workspace_id
-                                        }
-                                        sx={{
-                                            borderRadius: 2,
-                                            paddingY: 1,
-                                            gap: 1,
-
-                                            "&.Mui-selected": {
-                                                backgroundColor: "white",
-                                                color: "secondary.main",
-                                            },
-                                        }}
-                                    >
-                                        <SettingsIcon
-                                            sx={{
-                                                width: 24,
-                                                height: 24,
-                                                color:
-                                                    pathName === "/home/settings" && workspaceId === dat.workspace_id
-                                                        ? "secondary.main"
-                                                        : "#7C8883",
-                                            }}
-                                        />
-                                        <ListItemText
-                                            disableTypography
-                                            primary={
-                                                <Typography
-                                                    style={{
-                                                        fontWeight: 500,
-                                                        color:
-                                                            pathName ===
-                                                                "/home/settings" && workspaceId === dat.workspace_id
-                                                                ? "secondary.main"
-                                                                : "#7C8883",
-                                                    }}
-                                                >
-                                                    Settings
-                                                </Typography>
+                                    {dat.role_name === "owner" &&
+                                        <ListItemButton
+                                            onClick={() => handleExpand(dat.workspace_id)}
+                                            component={Link}
+                                            to="/home/settings"
+                                            selected={
+                                                pathName === "/home/settings" && workspaceId === dat.workspace_id
                                             }
-                                        />
-                                    </ListItemButton>
+                                            sx={{
+                                                borderRadius: 2,
+                                                paddingY: 1,
+                                                gap: 1,
+
+                                                "&.Mui-selected": {
+                                                    backgroundColor: "white",
+                                                    color: "secondary.main",
+                                                },
+                                            }}
+                                        >
+                                            <SettingsIcon
+                                                sx={{
+                                                    width: 24,
+                                                    height: 24,
+                                                    color:
+                                                        pathName === "/home/settings" && workspaceId === dat.workspace_id
+                                                            ? "secondary.main"
+                                                            : "#7C8883",
+                                                }}
+                                            />
+                                            <ListItemText
+                                                disableTypography
+                                                primary={
+                                                    <Typography
+                                                        style={{
+                                                            fontWeight: 500,
+                                                            color:
+                                                                pathName ===
+                                                                    "/home/settings" && workspaceId === dat.workspace_id
+                                                                    ? "secondary.main"
+                                                                    : "#7C8883",
+                                                        }}
+                                                    >
+                                                        Settings
+                                                    </Typography>
+                                                }
+                                            />
+                                        </ListItemButton>}
+
                                 </List>
                             </Collapse>
                         </React.Fragment>
@@ -962,35 +966,41 @@ export default function PageLayout(props: Props) {
                             },
                         }}
                     >
-                        <Stack p={1.5} gap={1} flexDirection={'row'}>
-                            <Avatar
-                                sx={{
-                                    backgroundColor: "primary.main",
-                                    width: 46,
-                                    height: 46,
-                                    color: 'white',
-                                }}
-                                alt={dataUser?.username ?? "-"}
-                            >
-                                {avatarAlt(dataUser?.username ?? "A")}
-                            </Avatar>
-                            <Stack>
-                                <Typography
-                                    fontSize={14}
-                                    fontWeight={500}
-                                    color={"#c5c5c5"}
+                        <MenuItem sx={{ p: 0 }} onClick={() => {
+                            history.push('/profile');
+                            handleExpand(-1);
+                            handleClose();
+                        }}>
+                            <Stack p={1.5} gap={1} flexDirection={'row'}>
+                                <Avatar
+                                    sx={{
+                                        backgroundColor: "primary.main",
+                                        width: 46,
+                                        height: 46,
+                                        color: 'white',
+                                    }}
+                                    alt={dataUser?.username ?? "-"}
                                 >
-                                    {dataUser?.username ?? "-"}
-                                </Typography>
-                                <Typography
-                                    fontSize={14}
-                                    fontWeight={500}
-                                    color={"#c5c5c5"}
-                                >
-                                    {dataUser?.email ?? "-"}
-                                </Typography>
+                                    {avatarAlt(dataUser?.username ?? "A")}
+                                </Avatar>
+                                <Stack>
+                                    <Typography
+                                        fontSize={14}
+                                        fontWeight={500}
+                                        color={"#c5c5c5"}
+                                    >
+                                        {dataUser?.username ?? "-"}
+                                    </Typography>
+                                    <Typography
+                                        fontSize={14}
+                                        fontWeight={500}
+                                        color={"#c5c5c5"}
+                                    >
+                                        {dataUser?.email ?? "-"}
+                                    </Typography>
+                                </Stack>
                             </Stack>
-                        </Stack>
+                        </MenuItem>
                         <MenuItem
                             onClick={() => {
                                 openModalLogout();

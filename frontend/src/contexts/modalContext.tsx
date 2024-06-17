@@ -30,7 +30,7 @@ import useBoardVisibilities from "../services/queries/useBoardVisibilities";
 import useWorkspace from "../services/queries/useWorkspace";
 import { useAuth } from "./authContext";
 import useUserData from "../services/queries/useUserData";
-import { Router, useHistory } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 
 interface IInviteUser {
     invited_user_id: number;
@@ -145,23 +145,6 @@ const ModalProvider = ({ children }: IModalContext) => {
         setIsFetchingItems(false);
     }, []);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const closeModalUser = () => {
-        setIsOpenModalUser(false);
-        resetInviteUser();
-    };
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const closeModalBoard = () => {
-        setIsOpenModalBoard(false);
-        resetCreateBoard();
-    };
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const closeModalWorkspace = () => {
-        setIsOpenModalWorkspace(false);
-        resetCreateWorkspace();
-    };
 
     const handleErrorResponse = useCallback((error: any) => {
         if (defaultAxios.isAxiosError(error)) {
@@ -252,6 +235,11 @@ const ModalProvider = ({ children }: IModalContext) => {
         defaultValues: initialValuesInviteUser,
     });
 
+    const closeModalUser = useCallback(() => {
+        setIsOpenModalUser(false);
+        resetInviteUser();
+    }, [resetInviteUser]);
+
     const watchUser = watchInviteUser("invited_user_id");
 
     const inviteUser = useCallback(
@@ -269,9 +257,10 @@ const ModalProvider = ({ children }: IModalContext) => {
                 }
                 );
                 if (data.insertId) {
+                    closeModalUser();
                     Swal.fire({
                         title: "Invitation Sent",
-                        position: "top-end",
+                        position: "bottom-end",
                         showConfirmButton: false,
                         icon: "success",
                         toast: true,
@@ -282,7 +271,6 @@ const ModalProvider = ({ children }: IModalContext) => {
                             container: "my-swal",
                         },
                     });
-                    closeModalUser();
                 }
                 setLoading(false);
             } catch (error) {
@@ -317,6 +305,11 @@ const ModalProvider = ({ children }: IModalContext) => {
         defaultValues: initialValuesCreateWorkspace,
     });
 
+    const closeModalWorkspace = useCallback(() => {
+        setIsOpenModalWorkspace(false);
+        resetCreateWorkspace();
+    }, [resetCreateWorkspace]);
+
     const createWorkspace = useCallback(
         async (values: ICreateWorkspace) => {
             setLoading(true);
@@ -333,9 +326,12 @@ const ModalProvider = ({ children }: IModalContext) => {
                 }
                 );
                 if (!data.errno) {
+                    closeModalWorkspace();
+                    resetCreateWorkspace();
+                    setFetchingItems();
                     Swal.fire({
                         title: "Workspace Created",
-                        position: "top-end",
+                        position: "bottom-end",
                         showConfirmButton: false,
                         icon: "success",
                         toast: true,
@@ -347,9 +343,6 @@ const ModalProvider = ({ children }: IModalContext) => {
                         },
                     });
                     history.push("/home");
-                    resetCreateWorkspace();
-                    setFetchingItems();
-                    closeModalWorkspace();
                 }
                 setLoading(false);
             } catch (error) {
@@ -358,7 +351,7 @@ const ModalProvider = ({ children }: IModalContext) => {
                 handleErrorResponse(error);
             }
         },
-        [Router, closeModalWorkspace, handleErrorResponse, resetCreateWorkspace, setFetchingItems],
+        [history, closeModalWorkspace, handleErrorResponse, resetCreateWorkspace, setFetchingItems],
     );
 
     const onSubmitCreateWorkspace = (data: ICreateWorkspace) => {
@@ -385,6 +378,11 @@ const ModalProvider = ({ children }: IModalContext) => {
         defaultValues: initialValuesCreateBoard,
     });
 
+    const closeModalBoard = useCallback(() => {
+        setIsOpenModalBoard(false);
+        resetCreateBoard();
+    }, [resetCreateBoard]);
+
     const createBoard = useCallback(
         async (values: ICreateBoard) => {
             setLoading(true);
@@ -400,9 +398,15 @@ const ModalProvider = ({ children }: IModalContext) => {
                 }
                 );
                 if (!data.errno) {
+                    closeModalBoard();
+                    setWorkspaceId(values.workspace.id);
+                    setBoardId(data.boardId);
+                    setWorksId(undefined);
+                    resetCreateBoard();
+                    setFetchingItems();
                     Swal.fire({
                         title: "Board Created",
-                        position: "top-end",
+                        position: "bottom-end",
                         showConfirmButton: false,
                         icon: "success",
                         toast: true,
@@ -413,13 +417,7 @@ const ModalProvider = ({ children }: IModalContext) => {
                             container: "my-swal",
                         },
                     });
-                    setWorkspaceId(values.workspace.id);
-                    setBoardId(data.boardId);
                     history.push("/home/lists");
-                    setWorksId(undefined);
-                    resetCreateBoard();
-                    setFetchingItems();
-                    closeModalBoard();
                 }
                 setLoading(false);
             } catch (error) {
@@ -428,7 +426,7 @@ const ModalProvider = ({ children }: IModalContext) => {
                 handleErrorResponse(error);
             }
         },
-        [Router, closeModalBoard, handleErrorResponse, resetCreateBoard, setBoardId, setFetchingItems, setWorkspaceId],
+        [history, closeModalBoard, handleErrorResponse, resetCreateBoard, setBoardId, setFetchingItems, setWorkspaceId],
     );
 
     const onSubmitCreateBoard = (data: ICreateBoard) => {

@@ -119,11 +119,11 @@ const ModalProvider = ({ children }: IModalContext) => {
     const [isOpenModalUser, setIsOpenModalUser] = useState(false);
     const [isOpenModalBoard, setIsOpenModalBoard] = useState(false);
     const [isOpenModalWorkspace, setIsOpenModalWorkspace] = useState(false);
-    const { data: dataWTypes } = useWorkspaceTypes();
-    const { data: dataBVisibilites } = useBoardVisibilities();
-    const { data: dataAUssers } = useAllUsers();
-    const { data: dataUser } = useUserData();
-    const { data: dataWorkspace } = useWorkspace();
+    const { data: dataWTypes, refetch: refetchWTypes } = useWorkspaceTypes();
+    const { data: dataBVisibilites, refetch: refetchBVisibilites } = useBoardVisibilities();
+    const { data: dataAUssers, refetch: refetchAUssers } = useAllUsers();
+    const { data: dataUser, refetch: refetchUser } = useUserData();
+    const { data: dataWorkspace, refetch: refetchWorkspace } = useWorkspace();
 
     const workspaces = dataWorkspace?.map((li) => ({
         id: li.workspace_id,
@@ -440,6 +440,14 @@ const ModalProvider = ({ children }: IModalContext) => {
         }
     }, [selWorkspaces, setValueCreateBoard, setValueInviteUser, worksId]);
 
+    useEffect(() => {
+        refetchWTypes();
+        refetchBVisibilites();
+        refetchAUssers();
+        refetchUser();
+        refetchWorkspace();
+    }, [refetchAUssers, refetchBVisibilites, refetchUser, refetchWTypes, refetchWorkspace]);
+
     const value = useMemo(() => ({
         isOpenModalUser,
         setIsOpenModalUser,
@@ -466,6 +474,7 @@ const ModalProvider = ({ children }: IModalContext) => {
                     sx: {
                         borderRadius: 2,
                         maxWidth: "960px",
+                        overflow: 'visible',
                     },
                 }}
             >
@@ -568,6 +577,7 @@ const ModalProvider = ({ children }: IModalContext) => {
                     sx: {
                         borderRadius: 2,
                         maxWidth: "960px",
+                        overflow: 'visible',
                     },
                 }}
             >
@@ -745,6 +755,7 @@ const ModalProvider = ({ children }: IModalContext) => {
                     sx: {
                         borderRadius: 2,
                         maxWidth: "960px",
+                        overflow: 'visible',
                     },
                 }}
             >

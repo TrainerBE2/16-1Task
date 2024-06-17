@@ -30,14 +30,14 @@ const schema = yup
   .object({
     email: yup
       .string()
-      .email("Format email salah")
-      .required("Kolom wajib diisi"),
+      .email("Must be an email")
+      .required("Required"),
     username: yup
       .string()
-      .required("Kolom wajib diisi"),
-    password: yup.string().required("Kolom wajib diisi"),
-    passwordUlang: yup.string().required("Kolom wajib diisi")
-      .oneOf([yup.ref("password")], "Kata sandi tidak sama"),
+      .required("Required"),
+    password: yup.string().required("Required"),
+    passwordUlang: yup.string().required("Required")
+      .oneOf([yup.ref("password")], "Password didn't match"),
   })
   .required();
 
@@ -201,7 +201,7 @@ const Register = () => {
                     marginBottom={1}
                     variant="body1"
                   >
-                    Kata Sandi
+                    Password
                   </Typography>
                   <Controller
                     name="password"
@@ -263,7 +263,7 @@ const Register = () => {
                     marginBottom={1}
                     variant="body1"
                   >
-                    Ulang Kata Sandi
+                    Confirm Password
                   </Typography>
                   <Controller
                     name="passwordUlang"

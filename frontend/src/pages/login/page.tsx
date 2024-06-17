@@ -29,8 +29,8 @@ const schema = yup
   .object({
     email: yup
       .string()
-      .required("Kolom wajib diisi"),
-    password: yup.string().required("Kolom wajib diisi"),
+      .required("Required"),
+    password: yup.string().required("Required"),
   })
   .required();
 
@@ -185,7 +185,7 @@ const Login = () => {
                   marginBottom={1}
                   variant="body1"
                 >
-                  Kata Sandi
+                  Password
                 </Typography>
                 <Controller
                   name="password"

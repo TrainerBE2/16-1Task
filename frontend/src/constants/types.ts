@@ -273,6 +273,18 @@ export type TCActivity = {
 
 export type GetCardActivityResponse = TCActivity[];
 
+export type TUActivity = {
+  id: number;
+  action_id: number;
+  action_name: string;
+  list_card_id: number;
+  list_card_title: string;
+  detailed: string;
+  created_at: string;
+};
+
+export type GetUserActivityResponse = TUActivity[];
+
 export type TCLabel = {
   label_id: number;
   list_card_id: number;
@@ -284,6 +296,7 @@ export type TCLabel = {
 export type GetCardLabelResponse = TCLabel[];
 
 export type TCDate = {
+  id: number;
   adder_username: string;
   adder_email: string;
   adder_id: number;

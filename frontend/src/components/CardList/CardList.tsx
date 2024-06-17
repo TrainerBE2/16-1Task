@@ -12,6 +12,7 @@ import CloseIcon from '@mui/icons-material/Close';
 interface ICardListProps {
     id: number;
     namaUser: string;
+    level: string;
     namaCard: string;
     namaList: string;
     refetch?: () => void;
@@ -20,6 +21,7 @@ interface ICardListProps {
 const CardList = ({
     id,
     namaCard,
+    level,
     namaUser,
     namaList,
     refetch,
@@ -228,13 +230,14 @@ const CardList = ({
                     /> :
                     <Stack mb={1.5} flexDirection={'row'} justifyContent={'space-between'} alignItems={'center'}>
                         <Typography ml={0.3} mt={0.3} fontWeight={"500"} color={"primary.contrastText"}
-                            onClick={handleTextClick} >{namaCard}</Typography>
-                        <IconButton
-                            onClick={deleteList}
-                            sx={{ p: 0.5 }}
-                        >
-                            <CloseIcon color="error" />
-                        </IconButton>
+                            onClick={level === "see" ? undefined : handleTextClick} >{namaCard}</Typography>
+                        {level === "delete" &&
+                            <IconButton
+                                onClick={deleteList}
+                                sx={{ p: 0.5 }}
+                            >
+                                <CloseIcon color="error" />
+                            </IconButton>}
                     </Stack>
                 }
                 <Stack gap={1} sx={{
@@ -244,7 +247,7 @@ const CardList = ({
                     maxHeight: "67vh",
                 }}>
                     {dataListCard && dataListCard.map((dat, idx) =>
-                        <CardListCard idList={dat.list_id} namaUser={namaUser} namaList={namaList} desc={dat.description} key={String(idx)} id={dat.card_id} refetch={refetchListCard} namaCard={dat.title} />
+                        <CardListCard level={level} idList={dat.list_id} namaUser={namaUser} namaList={namaList} desc={dat.description} key={String(idx)} id={dat.card_id} refetch={refetchListCard} namaCard={dat.title} />
                     )}
                 </Stack>
 
@@ -282,13 +285,13 @@ const CardList = ({
                                 </Button>
                             </Stack>
                         </Stack>
-                    </Box> :
-                    <Button
-                        onClick={() => setIsNewCard(true)} sx={{ fontSize: 12, height: 35, minWidth: 200, mt: 1.5 }} variant="contained" color="secondary" startIcon={
-                            <Icon path={mdiPlus} size={1} />
-                        }>
-                        Add card
-                    </Button>}
+                    </Box> : level !== "see" ?
+                        <Button
+                            onClick={() => setIsNewCard(true)} sx={{ fontSize: 12, height: 35, minWidth: 200, mt: 1.5 }} variant="contained" color="secondary" startIcon={
+                                <Icon path={mdiPlus} size={1} />
+                            }>
+                            Add card
+                        </Button> : null}
             </Stack>
         </Box>
     );

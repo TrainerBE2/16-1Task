@@ -4,7 +4,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
-import { Autocomplete, Avatar, AvatarGroup, Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, Menu, MenuItem, TextField, Tooltip } from "@mui/material";
+import { Autocomplete, Avatar, AvatarGroup, Badge, Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, Menu, MenuItem, TextField, Tooltip, styled } from "@mui/material";
 import avatarAlt from "../../utils/avatarAlt";
 import { ChangeEvent, useCallback, useState, KeyboardEvent } from "react";
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -18,7 +18,7 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import useBoard from "../../services/queries/useBoard";
 import axios from "../../services/axios";
 import { DefaultResponse, StarredResponse } from "../../constants/types";
-import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
+import PersonAddAltIcon from '@mui/icons-material/PersonAdd';
 import useBoardCollaborators from "../../services/queries/useBoardCollaborators";
 import useWorkspaceMembers from "../../services/queries/useWorkspaceMembers";
 import CloseIcon from "@mui/icons-material/Close";
@@ -28,10 +28,15 @@ import useBoardList from "../../services/queries/useBoardList";
 import CardList from "../../components/CardList/CardList";
 import { mdiPlus } from '@mdi/js';
 import Icon from "@mdi/react";
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import CreateIcon from '@mui/icons-material/Create';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { useHistory } from "react-router-dom";
 
 const Board = () => {
   const theme = useTheme();
   const { workspaceId, boardId } = useAuth();
+  const History = useHistory();
   const { isFetchingItems, cancelFetchingItems } = useModal();
   const { data: dataBoard, refetch: refetchBoard } = useBoard(boardId);
   const { data: dataBoardCollab, refetch: refetchBoardCollab } = useBoardCollaborators(boardId);
@@ -41,6 +46,7 @@ const Board = () => {
   const [idUser, setIdUser] = useState<number>();
   const [idPriv, setIdPriv] = useState<number>();
   const [title, setTitle] = useState<string>();
+  const [level, setLevel] = useState<string>();
   const [titleList, setTitleList] = useState<string>();
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isNewList, setIsNewList] = useState<boolean>(false);
@@ -49,6 +55,9 @@ const Board = () => {
   const [isOpenModalUser, setIsOpenModalUser] = useState(false);
 
   const [anchorElC, setAnchorElC] = React.useState<null | HTMLElement>(null);
+  const [isOpenModalLeave, setIsOpenModalLeave] = React.useState(false);
+  const openModalLeave = () => setIsOpenModalLeave(true);
+  const closeModalLeave = () => setIsOpenModalLeave(false);
 
   const openC = Boolean(anchorElC);
   const handleClickC = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -228,6 +237,7 @@ const Board = () => {
         setLoading(false);
       } catch (error) {
         setLoading(false);
+        closeModalUser();
         console.log(error)
         handleErrorResponse(error);
       }
@@ -290,12 +300,59 @@ const Board = () => {
     [boardId, handleErrorResponse, refetch, titleList],
   );
 
+  const leave = useCallback(
+    async () => {
+      setLoading(true);
+      try {
+        const { data: dataN } = await axios.delete<DefaultResponse>(
+          `boards/${boardId}`, {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          }
+        }
+        );
+        if (!dataN.errno) {
+          closeModalLeave();
+          Swal.fire({
+            title: "Board Deleted",
+            position: "bottom-end",
+            showConfirmButton: false,
+            icon: "success",
+            toast: true,
+            timer: 3000,
+            timerProgressBar: true,
+            showCloseButton: true,
+            customClass: {
+              container: "my-swal",
+            },
+          });
+          refetch();
+          History.push("/home/boards");
+        }
+        setLoading(false);
+      } catch (error) {
+        closeModalLeave();
+        setLoading(false);
+        console.log(error)
+        handleErrorResponse(error);
+      }
+    },
+    [History, boardId, handleErrorResponse, refetch],
+  );
+
   React.useEffect(() => {
     if (isFetchingItems) {
       refetch();
       cancelFetchingItems();
     }
   }, [cancelFetchingItems, isFetchingItems, refetch]);
+
+  React.useEffect(() => {
+    if (dataUser && dataBoardCollab) {
+      const user = dataBoardCollab.find((li) => (li.user_id === dataUser.user_id));
+      setLevel(user?.privilege_name);
+    }
+  }, [dataBoardCollab, dataUser]);
 
   React.useEffect(() => {
     if (!title && dataBoard) {
@@ -334,7 +391,7 @@ const Board = () => {
                 <Typography
                   fontWeight={"600"}
                   color={'white'}
-                  onClick={handleTextClick}
+                  onClick={level === 'see' ? undefined : handleTextClick}
                 >
                   {dataBoard && dataBoard.board_title}
                 </Typography>
@@ -356,18 +413,21 @@ const Board = () => {
                 </IconButton>
               }
               {dataBoard && dataBoard.visibility_id === 1 ?
-                <IconButton
-                  onClick={handleClickC}
-                  sx={{ pl: 0 }}
-                >
-                  <LockOutlinedIcon sx={{ color: 'white' }} />
-                </IconButton> :
-                <IconButton
-                  onClick={handleClickC}
-                  sx={{ pl: 0 }}
-                >
-                  <PeopleOutlineIcon sx={{ color: 'white' }} />
-                </IconButton>
+                level === 'see' ? <LockOutlinedIcon sx={{ color: 'white' }} /> :
+                  <IconButton
+                    onClick={handleClickC}
+                    sx={{ pl: 0 }}
+                  >
+                    <LockOutlinedIcon sx={{ color: 'white' }} />
+                  </IconButton> :
+                level === 'see' ? <PeopleOutlineIcon sx={{ color: 'white' }} />
+                  :
+                  <IconButton
+                    onClick={handleClickC}
+                    sx={{ pl: 0 }}
+                  >
+                    <PeopleOutlineIcon sx={{ color: 'white' }} />
+                  </IconButton>
               }
               <Menu
                 id="basic-menu"
@@ -457,26 +517,97 @@ const Board = () => {
                         ],
                       },
                     }}>
-                      <Avatar
-                        sx={{
-                          backgroundColor: "secondary.main",
-                          width: 32, height: 32,
-                          color: 'white',
-                        }}
-                        alt={dat?.user_username ?? "-"}
+                      {dat.privilege_name === 'see' ? <Badge
+                        overlap="circular"
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                        badgeContent={
+                          <Stack sx={{
+                            p: 0.4,
+                            bgcolor: 'buttonblue.main',
+                            borderRadius: 200,
+                            border: `2px solid primary.main`,
+                          }}>
+                            <VisibilityIcon sx={{ fontSize: 8, color: 'white' }} />
+                          </Stack>
+                        }
                       >
-                        {avatarAlt(dat?.user_username ?? "A")}
-                      </Avatar>
+                        <Avatar
+                          sx={{
+                            backgroundColor: "secondary.main",
+                            width: 32, height: 32,
+                            color: 'white',
+                          }}
+                          alt={dat?.user_username ?? "-"}
+                        >
+                          {avatarAlt(dat?.user_username ?? "A")}
+                        </Avatar>
+                      </Badge> : dat.privilege_name === 'edit' ? <Badge
+                        overlap="circular"
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                        badgeContent={
+                          <Stack sx={{
+                            p: 0.4,
+                            bgcolor: 'buttonyellow.main',
+                            borderRadius: 200,
+                            border: `2px solid primary.main`,
+                          }}>
+                            <CreateIcon sx={{ fontSize: 8, color: 'white' }} />
+                          </Stack>
+                        }
+                      >
+                        <Avatar
+                          sx={{
+                            backgroundColor: "secondary.main",
+                            width: 32, height: 32,
+                            color: 'white',
+                          }}
+                          alt={dat?.user_username ?? "-"}
+                        >
+                          {avatarAlt(dat?.user_username ?? "A")}
+                        </Avatar>
+                      </Badge> : <Badge
+                        overlap="circular"
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                        badgeContent={
+                          <Stack sx={{
+                            p: 0.4,
+                            bgcolor: 'error.main',
+                            borderRadius: 200,
+                            border: `2px solid primary.main`,
+                          }}>
+                            <DeleteIcon sx={{ fontSize: 8, color: 'white' }} />
+                          </Stack>
+                        }
+                      >
+                        <Avatar
+                          sx={{
+                            backgroundColor: "secondary.main",
+                            width: 32, height: 32,
+                            color: 'white',
+                          }}
+                          alt={dat?.user_username ?? "-"}
+                        >
+                          {avatarAlt(dat?.user_username ?? "A")}
+                        </Avatar>
+                      </Badge>}
                     </Tooltip>
                   )}
                 </AvatarGroup>
               }
-              <IconButton
-                onClick={() => setIsOpenModalUser(true)}
-                sx={{ backgroundColor: "buttongreen.main", borderRadius: 2 }}
-              >
-                <PersonAddAltIcon sx={{ color: 'white', height: 16, width: 16 }} />
-              </IconButton>
+              {level !== 'see' &&
+                <IconButton
+                  onClick={() => setIsOpenModalUser(true)}
+                  sx={{ backgroundColor: "buttongreen.main", borderRadius: 2 }}
+                >
+                  <PersonAddAltIcon sx={{ color: 'white', height: 16, width: 16 }} />
+                </IconButton>}
+              {level === 'delete' &&
+                <IconButton
+                  onClick={openModalLeave}
+                  sx={{ backgroundColor: "error.main", borderRadius: 2 }}
+                >
+                  <DeleteIcon sx={{ color: 'white', height: 16, width: 16 }} />
+                </IconButton>}
             </Stack>
           </Stack>
         </Grid>
@@ -490,7 +621,7 @@ const Board = () => {
       }} alignItems={"flex-start"} p={2}>
         <Stack gap={1.5} flexDirection={'row'}>
           {dataBoardList && dataBoardList.map((dat, idx) =>
-            <CardList namaUser={dataUser?.username ?? ''} namaList={dat.title} key={String(idx)} id={dat.id} refetch={refetch} namaCard={dat.title} />
+            <CardList level={level ?? 'see'} namaUser={dataUser?.username ?? ''} namaList={dat.title} key={String(idx)} id={dat.id} refetch={refetch} namaCard={dat.title} />
           )}
           {isNewList ?
             <Box
@@ -527,13 +658,13 @@ const Board = () => {
                   </Button>
                 </Stack>
               </Stack>
-            </Box> :
-            <Button
-              onClick={() => setIsNewList(true)} sx={{ fontSize: 12, height: 35, minWidth: 200, }} variant="contained" color="secondary" startIcon={
-                <Icon path={mdiPlus} size={1} />
-              }>
-              Add list
-            </Button>}
+            </Box> : level !== "see" ?
+              <Button
+                onClick={() => setIsNewList(true)} sx={{ fontSize: 12, height: 35, minWidth: 200, }} variant="contained" color="secondary" startIcon={
+                  <Icon path={mdiPlus} size={1} />
+                }>
+                Add list
+              </Button> : null}
         </Stack>
       </Stack>
       <Dialog
@@ -578,6 +709,7 @@ const Board = () => {
             borderTop:
               "1px solid var(--text-primary-thin, #A8B4AF)",
             padding: isPhoneScreen ? 2.5 : 4.5,
+            overflow: 'visible',
           }}
         >
           <Stack flexDirection={"column"} gap={0.5}>
@@ -654,6 +786,87 @@ const Board = () => {
             }}
           >
             Add User
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        maxWidth="xs"
+        fullWidth={true}
+        fullScreen={isPhoneScreen}
+        open={isOpenModalLeave}
+        onClose={closeModalLeave}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            maxWidth: "960px",
+          },
+        }}
+      >
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          padding={isPhoneScreen ? 2.5 : 4.5}
+        >
+          <DialogTitle
+            sx={{ padding: 0 }}
+            fontSize={32}
+            fontWeight={700}
+          >
+            Delete Board
+          </DialogTitle>
+          {!isPhoneScreen &&
+            <IconButton
+              aria-label="close"
+              onClick={closeModalLeave}
+              sx={{
+                color: (theme) => theme.palette.grey[500],
+              }}
+            >
+              <CloseIcon />
+            </IconButton>}
+        </Stack>
+        <DialogContent
+          sx={{
+            borderTop:
+              "1px solid var(--text-primary-thin, #A8B4AF)",
+            paddingTop: isPhoneScreen ? 2.5 : 4.5,
+            paddingX: isPhoneScreen ? 2.5 : 4.5,
+          }}
+        >
+          <Typography>
+            Are you sure you want to delete this board from workspace?
+          </Typography>
+        </DialogContent>
+        <DialogActions
+          sx={{ paddingX: isPhoneScreen ? 2.5 : 4.5, paddingBottom: isPhoneScreen ? 2.5 : 4.5, paddingTop: 3, flexDirection: isPhoneScreen ? 'column' : 'row' }}
+        >
+          {isPhoneScreen &&
+            <LoadingButton
+              loading={isLoading}
+              fullWidth={isPhoneScreen}
+              variant="outlined"
+              onClick={closeModalLeave}
+              color="primary"
+              sx={{
+                fontWeight: "bold",
+              }}
+            >
+              Cancel
+            </LoadingButton>}
+          <LoadingButton
+            loading={isLoading}
+            fullWidth={isPhoneScreen}
+            variant="contained"
+            onClick={leave}
+            color="error"
+            sx={{
+              fontWeight: "bold",
+              marginLeft: isPhoneScreen ? 0 : 16,
+              marginTop: isPhoneScreen ? 2 : 0,
+            }}
+          >
+            Delete
           </LoadingButton>
         </DialogActions>
       </Dialog>

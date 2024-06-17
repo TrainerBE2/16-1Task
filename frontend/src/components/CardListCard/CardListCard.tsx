@@ -37,6 +37,7 @@ interface ICardListCardProps {
     id: number;
     idList: number;
     namaUser: string;
+    level: string;
     namaCard: string;
     namaList: string;
     desc: string;
@@ -47,6 +48,7 @@ const CardListCard = ({
     id,
     idList,
     namaUser,
+    level,
     namaCard,
     namaList,
     refetch,
@@ -74,7 +76,7 @@ const CardListCard = ({
     const [isPast, setIsPast] = useState<boolean>(false);
     const isPhoneScreen = useMediaQuery(theme.breakpoints.between("xs", "sm"));
     const [isOpenModalListCard, setIsOpenModalListCard] = useState(false);
-    const [colorHex, setColorHex] = useState<string>(dataCardCover && dataCardCover.length > 0 && dataCardCover[0].cover ? dataCardCover[0].cover : '');
+    const [colorHex, setColorHex] = useState<string>();
     const [colorLabel, setColorLabel] = useState<string>('');
     const [checklistCard, setChecklistCard] = useState<string>();
     const [label, setLabel] = useState<string>('');
@@ -512,6 +514,7 @@ const CardListCard = ({
                 setLoading(false);
             } catch (error) {
                 setLoading(false);
+                setIsEdit(false);
                 closeModalListCard();
                 console.log(error)
                 handleErrorResponse(error);
@@ -729,14 +732,21 @@ const CardListCard = ({
     }, [refetchs]);
 
     React.useEffect(() => {
-        if (colorHex) {
+        if (dataCardCover && dataCardCover.length > 0 && dataCardCover[0].cover) {
+            setColorHex(dataCardCover[0].cover);
+        }
+    }, [dataCardCover]);
+
+    React.useEffect(() => {
+        if (colorHex && level !== "see") {
             if (dataCardCover && dataCardCover.length > 0 && dataCardCover[0].cover) {
                 updateCover();
             } else {
                 newCover();
             }
         }
-    }, [colorHex, dataCardCover, newCover, updateCover]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [colorHex]);
 
     React.useEffect(() => {
         if (dataCardDate && dataCardDate.length > 0) {
@@ -888,8 +898,8 @@ const CardListCard = ({
                         fontSize={32}
                         fontWeight={700}
                     >
-                        <IconButton
-                            onClick={() => setDisplayColorPicker(true)} sx={{ py: 4.5, px: 3, color: 'white' }}
+                        <IconButton disabled={level === 'see'}
+                            onClick={level !== 'see' ? () => setDisplayColorPicker(true) : undefined} sx={{ py: 4.5, px: 3, color: level !== 'see' ? 'white' : dataCardCover && dataCardCover.length > 0 && dataCardCover[0].cover ? dataCardCover[0].cover : 'primary.main' }}
                         >
                             <PaletteIcon />
                         </IconButton>
@@ -969,6 +979,7 @@ const CardListCard = ({
                                             in list {namaList}
                                         </Typography>
                                         <BorderLinearProgress
+                                            sx={{ maxWidth: 470 }}
                                             variant="determinate"
                                             value={progressMember}
                                         />
@@ -989,8 +1000,8 @@ const CardListCard = ({
                                                                 gridTemplateColumns="repeat(6, 1fr)"
                                                             >
                                                                 {dataCardMember.map((dat, idx) =>
-                                                                    <Tooltip onMouseEnter={() => handleHoverM(dat.member_id, false)}
-                                                                        onMouseLeave={() => handleHoverM(dat.member_id, true)} key={String(idx)} title={dat?.member_username ?? "-"} slotProps={{
+                                                                    <Tooltip onMouseEnter={level === 'see' ? undefined : () => handleHoverM(dat.member_id, false)}
+                                                                        onMouseLeave={level === 'see' ? undefined : () => handleHoverM(dat.member_id, true)} key={String(idx)} title={dat?.member_username ?? "-"} slotProps={{
                                                                             popper: {
                                                                                 modifiers: [
                                                                                     {
@@ -1002,7 +1013,7 @@ const CardListCard = ({
                                                                                 ],
                                                                             },
                                                                         }}>
-                                                                        <IconButton onClick={() => deleteMember(dat.member_id)} sx={{ p: 0.5 }}>
+                                                                        <IconButton onClick={level === 'see' ? undefined : () => deleteMember(dat.member_id)} sx={{ p: 0.5 }}>
                                                                             {hoveringItemsM.includes(dat.member_id) ? (
                                                                                 <Avatar
                                                                                     sx={{
@@ -1053,8 +1064,8 @@ const CardListCard = ({
                                                         >
                                                             {dataCardLabel.map((dat, idx) =>
                                                                 <Stack key={String(idx)} flexDirection={'row'}>
-                                                                    <IconButton onClick={() => deleteLabel(dat.label_id)} sx={{ p: 0.5 }} onMouseEnter={() => handleHover(dat.label_id, false)}
-                                                                        onMouseLeave={() => handleHover(dat.label_id, true)}>
+                                                                    <IconButton onClick={level === 'see' ? undefined : () => deleteLabel(dat.label_id)} sx={{ p: 0.5 }} onMouseEnter={level === 'see' ? undefined : () => handleHover(dat.label_id, false)}
+                                                                        onMouseLeave={level === 'see' ? undefined : () => handleHover(dat.label_id, true)}>
                                                                         {hoveringItems.includes(dat.label_id) ? (
                                                                             <Chip label={dat.label_title} sx={{ backgroundColor: 'primary.main', color: 'error.main', borderRadius: 1 }} />
                                                                         ) : (
@@ -1077,7 +1088,7 @@ const CardListCard = ({
                                                         Due date
                                                     </Typography>
                                                     <Stack flexDirection={'row'}>
-                                                        <Chip icon={<AccessTimeIcon style={{ color: isPast ? 'black' : 'white' }} />} label={`${moment(dataCardDate[0].deadline, 'YYYY-MM-DD').format('DD MMMM YYYY')}`} sx={{ backgroundColor: isPast ? "buttonyellow.main" : "error.main", color: isPast ? 'black' : 'white', borderRadius: 1 }} />
+                                                        <Chip icon={<AccessTimeIcon style={{ color: dataCardChecklist && dataCardChecklist.filter((el) => el.status_id === 2).length === dataCardChecklist.length ? 'white' : isPast ? 'black' : 'white' }} />} label={`${moment(dataCardDate[0].deadline, 'YYYY-MM-DD').format('DD MMMM YYYY')}`} sx={{ backgroundColor: dataCardChecklist && dataCardChecklist.filter((el) => el.status_id === 2).length === dataCardChecklist.length ? 'buttongreen.main' : isPast ? "buttonyellow.main" : "error.main", color: dataCardChecklist && dataCardChecklist.filter((el) => el.status_id === 2).length === dataCardChecklist.length ? 'white' : isPast ? 'black' : 'white', borderRadius: 1 }} />
                                                     </Stack>
                                                 </Stack>}
                                         </Stack>
@@ -1097,10 +1108,11 @@ const CardListCard = ({
                                     </Stack>
                                     <Stack ml={3.5} flex={1} gap={1.5}>
                                         <TextField
+                                            contentEditable={level !== 'see'}
                                             multiline
                                             value={description}
-                                            onChange={handleChangeDesc}
-                                            onFocus={() => setIsEdit(true)}
+                                            onChange={level !== 'see' ? handleChangeDesc : undefined}
+                                            onFocus={level !== 'see' ? () => setIsEdit(true) : undefined}
                                             rows={5}
                                             hiddenLabel
                                             placeholder="Write a description..."
@@ -1112,6 +1124,7 @@ const CardListCard = ({
                                                     borderRadius: 2,
                                                     color: 'white !important',
                                                     minWidth: 303,
+                                                    maxWidth: 470,
                                                 },
                                                 '& .MuiInputBase-input': {
                                                     color: 'white !important',
@@ -1171,7 +1184,7 @@ const CardListCard = ({
                                             <Stack key={String(idx)} flexDirection={'row'} justifyContent={'space-between'}>
                                                 <Stack flexDirection={'row'} alignItems={'center'} ml={1} gap={0.2}>
                                                     <CustomCheckbox
-                                                        // onClick={}
+                                                        disabled={level === 'see'}
                                                         onChange={() => { dat.status_id === 1 ? doneChecklist(dat.checklist_id) : unDoneChecklist(dat.checklist_id) }}
                                                         checked={
                                                             dat.status_id === 1 ? false : true
@@ -1185,244 +1198,248 @@ const CardListCard = ({
                                                         {dat.checklist_title}
                                                     </Typography>
                                                 </Stack>
-                                                <IconButton
-                                                    aria-label="close"
-                                                    onClick={() => deleteChecklist(dat.checklist_id)}
-                                                    sx={{
-                                                        color: 'error.main',
-                                                    }}
-                                                >
-                                                    <CloseIcon />
-                                                </IconButton>
+                                                {level === 'delete' &&
+                                                    <IconButton
+                                                        aria-label="close"
+                                                        onClick={() => deleteChecklist(dat.checklist_id)}
+                                                        sx={{
+                                                            color: 'error.main',
+                                                        }}
+                                                    >
+                                                        <CloseIcon />
+                                                    </IconButton>}
                                             </Stack>
                                         )}
                                     </Stack>
                                 }
                             </Stack>
-                            <Stack gap={0.5}>
-                                <Button variant="contained" color="error" size="small" sx={{ fontSize: 14, height: 35, width: 169 }} onClick={deleteCard}>
-                                    Delete Card
-                                </Button>
-                                <Typography
-                                    mt={2.5}
-                                    ml={0.5}
-                                    fontSize={12}
-                                    color={'white'}
-                                >
-                                    Add to card
-                                </Typography>
-                                <Button onClick={handleClickM} variant="contained" size="small" startIcon={<PersonOutlineIcon sx={{ width: 14, height: 14 }} />} sx={{ fontSize: 14, height: 35, width: 171, justifyContent: 'flex-start' }}>
-                                    Members
-                                </Button>
-                                <Menu
-                                    elevation={0}
-                                    anchorEl={anchorElM}
-                                    open={openM}
-                                    onClose={handleCloseM}
-                                    MenuListProps={{
-                                        "aria-labelledby": "basic-button",
-                                    }}
-                                    sx={{
-                                        "& .MuiPaper-root": {
-                                            borderRadius: 2,
-                                            borderStyle: "solid",
-                                            borderWidth: 1,
-                                            backgroundColor: "white",
-                                            borderColor: "white",
-                                            p: 1,
-                                            marginTop: theme.spacing(0.5),
-                                            overflow: 'visible',
-                                        },
-                                    }}
-                                >
-                                    <Stack gap={2} >
-                                        <Autocomplete
-                                            id="user"
-                                            fullWidth
-                                            size="medium"
-                                            disablePortal
-                                            options={dataMembers ?? []}
-                                            getOptionLabel={(option) => option.user_username ?? ''}
-                                            onChange={(_event, user: any) => {
-                                                setInviteMember(user?.user_id)
-                                            }
-                                            }
-                                            renderInput={(params) => <TextField
+                            {level !== 'see' &&
+                                <Stack gap={0.5}>
+                                    {level === 'delete' &&
+                                        <Button variant="contained" color="error" size="small" sx={{ fontSize: 14, height: 35, width: 169 }} onClick={deleteCard}>
+                                            Delete Card
+                                        </Button>}
+                                    <Typography
+                                        mt={2.5}
+                                        ml={0.5}
+                                        fontSize={12}
+                                        color={'white'}
+                                    >
+                                        Add to card
+                                    </Typography>
+                                    <Button onClick={handleClickM} variant="contained" size="small" startIcon={<PersonOutlineIcon sx={{ width: 14, height: 14 }} />} sx={{ fontSize: 14, height: 35, width: 171, justifyContent: 'flex-start' }}>
+                                        Members
+                                    </Button>
+                                    <Menu
+                                        elevation={0}
+                                        anchorEl={anchorElM}
+                                        open={openM}
+                                        onClose={handleCloseM}
+                                        MenuListProps={{
+                                            "aria-labelledby": "basic-button",
+                                        }}
+                                        sx={{
+                                            "& .MuiPaper-root": {
+                                                borderRadius: 2,
+                                                borderStyle: "solid",
+                                                borderWidth: 1,
+                                                backgroundColor: "white",
+                                                borderColor: "white",
+                                                p: 1,
+                                                marginTop: theme.spacing(0.5),
+                                                overflow: 'visible',
+                                            },
+                                        }}
+                                    >
+                                        <Stack gap={2} >
+                                            <Autocomplete
+                                                id="user"
+                                                fullWidth
+                                                size="medium"
+                                                disablePortal
+                                                options={dataMembers ?? []}
+                                                getOptionLabel={(option) => option.user_username ?? ''}
+                                                onChange={(_event, user: any) => {
+                                                    setInviteMember(user?.user_id)
+                                                }
+                                                }
+                                                renderInput={(params) => <TextField
+                                                    sx={{
+                                                        '& .MuiInputBase-input': {
+                                                            fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
+                                                            padding: 0,
+                                                            border: 0,
+                                                        },
+                                                        width: 300,
+                                                    }} {...params} />}
+                                            />
+                                            <Stack gap={0.5} flexDirection={'row'} justifyContent={"space-between"}>
+                                                <Button fullWidth
+                                                    onClick={addCollabolator} sx={{ fontSize: 14, height: 35, mt: 0.5 }} variant="contained" color="buttongreen">
+                                                    Add Member
+                                                </Button>
+                                            </Stack>
+                                        </Stack>
+                                    </Menu>
+                                    <Button onClick={handleClickL} variant="contained" size="small" startIcon={<LabelOutlinedIcon sx={{ width: 14, height: 14 }} />} sx={{ fontSize: 14, height: 35, width: 171, justifyContent: 'flex-start' }}>
+                                        Labels
+                                    </Button>
+                                    <Menu
+                                        elevation={0}
+                                        anchorEl={anchorElL}
+                                        open={openL}
+                                        onClose={handleCloseL}
+                                        MenuListProps={{
+                                            "aria-labelledby": "basic-button",
+                                        }}
+                                        sx={{
+                                            "& .MuiPaper-root": {
+                                                borderRadius: 2,
+                                                borderStyle: "solid",
+                                                borderWidth: 1,
+                                                backgroundColor: "white",
+                                                borderColor: "white",
+                                                p: 1,
+                                                marginTop: theme.spacing(0.5),
+                                            },
+                                        }}
+                                    >
+                                        <Stack gap={1} >
+                                            <TextField
+                                                value={label}
+                                                onChange={handleChangeLabel}
+                                                autoFocus
+                                                inputProps={{ style: { padding: 10, backgroundColor: 'white', borderRadius: 8 } }}
                                                 sx={{
                                                     '& .MuiInputBase-input': {
                                                         fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
                                                         padding: 0,
                                                         border: 0,
+                                                        width: 300,
                                                     },
-                                                    width: 300,
-                                                }} {...params} />}
-                                        />
-                                        <Stack gap={0.5} flexDirection={'row'} justifyContent={"space-between"}>
-                                            <Button fullWidth
-                                                onClick={addCollabolator} sx={{ fontSize: 14, height: 35, mt: 0.5 }} variant="contained" color="buttongreen">
-                                                Add Member
-                                            </Button>
-                                        </Stack>
-                                    </Stack>
-                                </Menu>
-                                <Button onClick={handleClickL} variant="contained" size="small" startIcon={<LabelOutlinedIcon sx={{ width: 14, height: 14 }} />} sx={{ fontSize: 14, height: 35, width: 171, justifyContent: 'flex-start' }}>
-                                    Labels
-                                </Button>
-                                <Menu
-                                    elevation={0}
-                                    anchorEl={anchorElL}
-                                    open={openL}
-                                    onClose={handleCloseL}
-                                    MenuListProps={{
-                                        "aria-labelledby": "basic-button",
-                                    }}
-                                    sx={{
-                                        "& .MuiPaper-root": {
-                                            borderRadius: 2,
-                                            borderStyle: "solid",
-                                            borderWidth: 1,
-                                            backgroundColor: "white",
-                                            borderColor: "white",
-                                            p: 1,
-                                            marginTop: theme.spacing(0.5),
-                                        },
-                                    }}
-                                >
-                                    <Stack gap={1} >
-                                        <TextField
-                                            value={label}
-                                            onChange={handleChangeLabel}
-                                            autoFocus
-                                            inputProps={{ style: { padding: 10, backgroundColor: 'white', borderRadius: 8 } }}
-                                            sx={{
-                                                '& .MuiInputBase-input': {
-                                                    fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
-                                                    padding: 0,
-                                                    border: 0,
-                                                    width: 300,
-                                                },
-                                            }}
-                                        />
-                                        <SketchPicker
-                                            styles={{
-                                                default: {
-                                                    picker: {
-                                                        boxShadow: 'none',
+                                                }}
+                                            />
+                                            <SketchPicker
+                                                styles={{
+                                                    default: {
+                                                        picker: {
+                                                            boxShadow: 'none',
+                                                        },
                                                     },
-                                                },
-                                            }}
-                                            width="300px"
-                                            disableAlpha
-                                            color={colorLabel}
-                                            onChangeComplete={(color) =>
-                                                setColorLabel(
-                                                    color.hex,
-                                                )
-                                            }
-                                        />
-                                        <Stack gap={0.5} flexDirection={'row'} justifyContent={"space-between"}>
-                                            <Button fullWidth
-                                                onClick={addLabel} sx={{ fontSize: 14, height: 35, mt: 0.5 }} variant="contained" color="buttongreen">
-                                                Add Label
-                                            </Button>
-                                        </Stack>
-                                    </Stack>
-                                </Menu>
-                                <Button onClick={handleClick} variant="contained" size="small" startIcon={<CheckBoxOutlinedIcon sx={{ width: 14, height: 14 }} />} sx={{ fontSize: 14, height: 35, width: 171, justifyContent: 'flex-start' }}>
-                                    Checklist
-                                </Button>
-                                <Menu
-                                    elevation={0}
-                                    anchorEl={anchorEl}
-                                    open={open}
-                                    onClose={handleClose}
-                                    MenuListProps={{
-                                        "aria-labelledby": "basic-button",
-                                    }}
-                                    sx={{
-                                        "& .MuiPaper-root": {
-                                            borderRadius: 2,
-                                            borderStyle: "solid",
-                                            borderWidth: 1,
-                                            backgroundColor: "white",
-                                            borderColor: "white",
-                                            p: 1,
-                                            marginTop: theme.spacing(0.5),
-                                        },
-                                    }}
-                                >
-                                    <Stack gap={1} >
-                                        <TextField
-                                            value={checklistCard}
-                                            onChange={handleChangeChecklist}
-                                            autoFocus
-                                            inputProps={{ style: { padding: 10, backgroundColor: 'white', borderRadius: 8 } }}
-                                            sx={{
-                                                '& .MuiInputBase-input': {
-                                                    fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
-                                                    padding: 0,
-                                                    border: 0,
-                                                    width: 300,
-                                                },
-                                            }}
-                                        />
-                                        <Stack gap={0.5} flexDirection={'row'} justifyContent={"space-between"}>
-                                            <Button fullWidth
-                                                onClick={addChecklist} sx={{ fontSize: 14, height: 35, mt: 0.5 }} variant="contained" color="buttongreen">
-                                                Add Checklist
-                                            </Button>
-                                        </Stack>
-                                    </Stack>
-                                </Menu>
-                                <Button onClick={handleClickD} variant="contained" size="small" startIcon={<EventOutlinedIcon sx={{ width: 14, height: 14 }} />} sx={{ fontSize: 14, height: 35, width: 171, justifyContent: 'flex-start' }}>
-                                    Date
-                                </Button>
-                                <Menu
-                                    elevation={0}
-                                    anchorEl={anchorElD}
-                                    open={openD}
-                                    onClose={handleCloseD}
-                                    MenuListProps={{
-                                        "aria-labelledby": "basic-button",
-                                    }}
-                                    sx={{
-                                        "& .MuiPaper-root": {
-                                            borderRadius: 2,
-                                            borderStyle: "solid",
-                                            borderWidth: 1,
-                                            backgroundColor: "white",
-                                            borderColor: "white",
-                                            p: 1,
-                                            marginTop: theme.spacing(0.5),
-                                        },
-                                    }}
-                                >
-                                    <Stack gap={1} >
-                                        <LocalizationProvider dateAdapter={AdapterMoment}>
-                                            <DatePicker
-                                                value={valueD}
-                                                onChange={(newValue) => setValueD(newValue)} />
-                                        </LocalizationProvider>
-                                        <Stack>
-                                            {dataCardDate && dataCardDate.length > 0 ?
-                                                <Stack gap={0.5} flexDirection={'row'} justifyContent={"space-between"}>
-                                                    <Button fullWidth
-                                                        onClick={() => updateDate(dataCardDate[0].id)} sx={{ fontSize: 14, height: 35, mt: 0.5 }} variant="contained" color="buttongreen">
-                                                        Save
-                                                    </Button>
-                                                    <Button fullWidth
-                                                        onClick={() => deleteDate(dataCardDate[0].id)} sx={{ fontSize: 14, height: 35, mt: 0.5 }} variant="contained" color="error">
-                                                        Delete
-                                                    </Button>
-                                                </Stack> :
+                                                }}
+                                                width="300px"
+                                                disableAlpha
+                                                color={colorLabel}
+                                                onChangeComplete={(color) =>
+                                                    setColorLabel(
+                                                        color.hex,
+                                                    )
+                                                }
+                                            />
+                                            <Stack gap={0.5} flexDirection={'row'} justifyContent={"space-between"}>
                                                 <Button fullWidth
-                                                    onClick={addDate} sx={{ fontSize: 14, height: 35, mt: 0.5 }} variant="contained" color="buttongreen">
-                                                    Add Due Date
-                                                </Button>}
+                                                    onClick={addLabel} sx={{ fontSize: 14, height: 35, mt: 0.5 }} variant="contained" color="buttongreen">
+                                                    Add Label
+                                                </Button>
+                                            </Stack>
                                         </Stack>
-                                    </Stack>
-                                </Menu>
-                            </Stack>
+                                    </Menu>
+                                    <Button onClick={handleClick} variant="contained" size="small" startIcon={<CheckBoxOutlinedIcon sx={{ width: 14, height: 14 }} />} sx={{ fontSize: 14, height: 35, width: 171, justifyContent: 'flex-start' }}>
+                                        Checklist
+                                    </Button>
+                                    <Menu
+                                        elevation={0}
+                                        anchorEl={anchorEl}
+                                        open={open}
+                                        onClose={handleClose}
+                                        MenuListProps={{
+                                            "aria-labelledby": "basic-button",
+                                        }}
+                                        sx={{
+                                            "& .MuiPaper-root": {
+                                                borderRadius: 2,
+                                                borderStyle: "solid",
+                                                borderWidth: 1,
+                                                backgroundColor: "white",
+                                                borderColor: "white",
+                                                p: 1,
+                                                marginTop: theme.spacing(0.5),
+                                            },
+                                        }}
+                                    >
+                                        <Stack gap={1} >
+                                            <TextField
+                                                value={checklistCard}
+                                                onChange={handleChangeChecklist}
+                                                autoFocus
+                                                inputProps={{ style: { padding: 10, backgroundColor: 'white', borderRadius: 8 } }}
+                                                sx={{
+                                                    '& .MuiInputBase-input': {
+                                                        fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
+                                                        padding: 0,
+                                                        border: 0,
+                                                        width: 300,
+                                                    },
+                                                }}
+                                            />
+                                            <Stack gap={0.5} flexDirection={'row'} justifyContent={"space-between"}>
+                                                <Button fullWidth
+                                                    onClick={addChecklist} sx={{ fontSize: 14, height: 35, mt: 0.5 }} variant="contained" color="buttongreen">
+                                                    Add Checklist
+                                                </Button>
+                                            </Stack>
+                                        </Stack>
+                                    </Menu>
+                                    <Button onClick={handleClickD} variant="contained" size="small" startIcon={<EventOutlinedIcon sx={{ width: 14, height: 14 }} />} sx={{ fontSize: 14, height: 35, width: 171, justifyContent: 'flex-start' }}>
+                                        Date
+                                    </Button>
+                                    <Menu
+                                        elevation={0}
+                                        anchorEl={anchorElD}
+                                        open={openD}
+                                        onClose={handleCloseD}
+                                        MenuListProps={{
+                                            "aria-labelledby": "basic-button",
+                                        }}
+                                        sx={{
+                                            "& .MuiPaper-root": {
+                                                borderRadius: 2,
+                                                borderStyle: "solid",
+                                                borderWidth: 1,
+                                                backgroundColor: "white",
+                                                borderColor: "white",
+                                                p: 1,
+                                                marginTop: theme.spacing(0.5),
+                                            },
+                                        }}
+                                    >
+                                        <Stack gap={1} >
+                                            <LocalizationProvider dateAdapter={AdapterMoment}>
+                                                <DatePicker
+                                                    value={valueD}
+                                                    onChange={(newValue) => setValueD(newValue)} />
+                                            </LocalizationProvider>
+                                            <Stack>
+                                                {dataCardDate && dataCardDate.length > 0 ?
+                                                    <Stack gap={0.5} flexDirection={'row'} justifyContent={"space-between"}>
+                                                        <Button fullWidth
+                                                            onClick={() => updateDate(dataCardDate[0].id)} sx={{ fontSize: 14, height: 35, mt: 0.5 }} variant="contained" color="buttongreen">
+                                                            Save
+                                                        </Button>
+                                                        {level === 'delete' &&
+                                                            <Button fullWidth
+                                                                onClick={() => deleteDate(dataCardDate[0].id)} sx={{ fontSize: 14, height: 35, mt: 0.5 }} variant="contained" color="error">
+                                                                Delete
+                                                            </Button>}
+                                                    </Stack> :
+                                                    <Button fullWidth
+                                                        onClick={addDate} sx={{ fontSize: 14, height: 35, mt: 0.5 }} variant="contained" color="buttongreen">
+                                                        Add Due Date
+                                                    </Button>}
+                                            </Stack>
+                                        </Stack>
+                                    </Menu>
+                                </Stack>}
                         </Stack>
                         <Stack gap={2}>
                             <Stack flexDirection={"row"} gap={1} >
@@ -1436,76 +1453,77 @@ const CardListCard = ({
                                     </Typography>
                                 </Stack>
                             </Stack>
-                            <Stack flexDirection={'row'} gap={1}>
-                                <Avatar
-                                    sx={{
-                                        backgroundColor: "secondary.main",
-                                        width: 32, height: 32,
-                                        color: 'white',
-                                        borderColor: 'primary.main',
-                                        border: 1,
-                                    }}
-                                    alt={namaUser ?? "-"}
-                                >
-                                    {avatarAlt(namaUser ?? "A")}
-                                </Avatar>
-                                <Stack gap={0.5} flex={1} flexDirection={'row'} alignItems={'center'} justifyContent={'space-between'} maxWidth={"454px"}>
-                                    <TextField
-                                        value={comment}
-                                        onChange={handleChangeComm}
-                                        fullWidth
-                                        hiddenLabel
-                                        placeholder="Write a comment..."
-                                        variant="filled"
-                                        size="small"
+                            {level !== 'see' &&
+                                <Stack flexDirection={'row'} gap={1}>
+                                    <Avatar
                                         sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                '& fieldset': {
-                                                    borderColor: 'primary.main',
-                                                },
-                                                '&:hover fieldset': {
-                                                    borderColor: 'primary.main',
-                                                },
-                                                '&.Mui-focused fieldset': {
-                                                    borderColor: 'primary.main',
-                                                },
-                                            },
-                                            '& .MuiInputBase-root': {
-                                                backgroundColor: 'primary.main',
-                                                borderRadius: 2,
-                                                color: 'white !important'
-                                            },
-                                            '& .MuiInput-underline:before': {
-                                                borderBottom: 'none',
-                                            },
-                                            '& .MuiInput-underline:after': {
-                                                borderBottom: 'none',
-                                            },
-                                            '& .MuiInput-underline:hover:before': {
-                                                borderBottom: 'none',
-                                            },
-                                            '& .MuiFilledInput-underline:before': {
-                                                borderBottom: 'none',
-                                            },
-                                            '& .MuiFilledInput-underline:after': {
-                                                borderBottom: 'none',
-                                            },
-                                            '& .MuiFilledInput-underline:hover:before': {
-                                                borderBottom: 'none',
-                                            },
-                                            '& .MuiInputBase-input.Mui-disabled': {
-                                                color: 'white !important',
-                                            },
+                                            backgroundColor: "secondary.main",
+                                            width: 32, height: 32,
+                                            color: 'white',
+                                            borderColor: 'primary.main',
+                                            border: 1,
                                         }}
-                                    />
-                                    <IconButton
-                                        disabled={comment === ''}
-                                        onClick={addComment} sx={{ color: 'buttongreen.main' }}
+                                        alt={namaUser ?? "-"}
                                     >
-                                        <SendIcon />
-                                    </IconButton>
-                                </Stack>
-                            </Stack>
+                                        {avatarAlt(namaUser ?? "A")}
+                                    </Avatar>
+                                    <Stack gap={0.5} flex={1} flexDirection={'row'} alignItems={'center'} justifyContent={'space-between'} maxWidth={"454px"}>
+                                        <TextField
+                                            value={comment}
+                                            onChange={handleChangeComm}
+                                            fullWidth
+                                            hiddenLabel
+                                            placeholder="Write a comment..."
+                                            variant="filled"
+                                            size="small"
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    '& fieldset': {
+                                                        borderColor: 'primary.main',
+                                                    },
+                                                    '&:hover fieldset': {
+                                                        borderColor: 'primary.main',
+                                                    },
+                                                    '&.Mui-focused fieldset': {
+                                                        borderColor: 'primary.main',
+                                                    },
+                                                },
+                                                '& .MuiInputBase-root': {
+                                                    backgroundColor: 'primary.main',
+                                                    borderRadius: 2,
+                                                    color: 'white !important'
+                                                },
+                                                '& .MuiInput-underline:before': {
+                                                    borderBottom: 'none',
+                                                },
+                                                '& .MuiInput-underline:after': {
+                                                    borderBottom: 'none',
+                                                },
+                                                '& .MuiInput-underline:hover:before': {
+                                                    borderBottom: 'none',
+                                                },
+                                                '& .MuiFilledInput-underline:before': {
+                                                    borderBottom: 'none',
+                                                },
+                                                '& .MuiFilledInput-underline:after': {
+                                                    borderBottom: 'none',
+                                                },
+                                                '& .MuiFilledInput-underline:hover:before': {
+                                                    borderBottom: 'none',
+                                                },
+                                                '& .MuiInputBase-input.Mui-disabled': {
+                                                    color: 'white !important',
+                                                },
+                                            }}
+                                        />
+                                        <IconButton
+                                            disabled={comment === ''}
+                                            onClick={addComment} sx={{ color: 'buttongreen.main' }}
+                                        >
+                                            <SendIcon />
+                                        </IconButton>
+                                    </Stack>
+                                </Stack>}
                             {dataCardComment && dataCardComment.length > 0 && dataCardComment.map((dat, idx) =>
                                 <Stack key={String(idx)} flexDirection={'row'} gap={1}>
                                     <Avatar
@@ -1528,11 +1546,12 @@ const CardListCard = ({
                                                 {`${dat.comment}`}
                                             </Typography>
                                         </Stack>
-                                        <IconButton
-                                            onClick={() => deleteComment(dat.comment_id)} sx={{ color: 'error.main' }}
-                                        >
-                                            <DeleteIcon />
-                                        </IconButton>
+                                        {level === 'delete' &&
+                                            <IconButton
+                                                onClick={() => deleteComment(dat.comment_id)} sx={{ color: 'error.main' }}
+                                            >
+                                                <DeleteIcon />
+                                            </IconButton>}
                                     </Stack>
                                 </Stack>
                             )}

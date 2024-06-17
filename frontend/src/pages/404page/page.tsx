@@ -2,7 +2,6 @@ import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useEffect } from 'react';
-import Illustration from '../../components/404Illustration/404Illustration';
 import React from 'react';
 
 
@@ -19,16 +18,19 @@ const Page404 = (props: IPage404Props) => {
     return (
         <Box
             sx={{
-                width: isTabletScreen ? '50%' : undefined,
-                height: isTabletScreen ? '50%' : undefined,
-                mt: -47,
+                display: 'flex',
+                height: '100vh',
                 justifyContent: 'center',
                 alignItems: 'center',
                 backgroundColor: '#FFF',
-                padding: isTabletScreen ? 3 : 90,
             }}
         >
-            <Illustration />
+            <img
+                src={"/images/404.png"}
+                alt="404"
+                width={isTabletScreen ? 404 : 600}
+                style={{ objectFit: "contain" }}
+            />
         </Box>
     );
 };

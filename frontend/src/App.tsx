@@ -3,7 +3,6 @@ import { ThemeProvider } from "@mui/material/styles";
 import { CacheProvider, EmotionCache } from "@emotion/react";
 import theme from "./config/theme";
 import createEmotionCache from "./config/createEmotionCache";
-import AppProvider from "./contexts/index";
 import { CookiesProvider } from "react-cookie";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";

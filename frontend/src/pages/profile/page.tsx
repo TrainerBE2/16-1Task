@@ -85,7 +85,6 @@ const Profile = () => {
   const [showPasswordUlang, setShowPasswordUlang] = React.useState(false);
   const theme = useTheme();
   const isPhoneScreen = useMediaQuery(theme.breakpoints.between("xs", "sm"));
-  const [isEdit, setIsEdit] = React.useState(false);
   const { setFetchingItems } = useModal();
   const { data: dataUser, refetch: refetchUser } = useUserData();
   const { data: dataUserActivity, refetch: refetchUserActivity } = useUserActivity();

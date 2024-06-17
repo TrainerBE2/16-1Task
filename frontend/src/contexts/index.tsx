@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useEffect } from "react";
 import { AuthProvider } from "./authContext";
 import { ModalProvider } from "./modalContext";
 
@@ -7,6 +7,9 @@ interface IindexProps {
 }
 
 const AppProvider = ({ children }: IindexProps) => {
+    useEffect(() => {
+        document.title = 'Task Management';
+    }, []);
     return (
         <AuthProvider>
             <ModalProvider>

@@ -95,13 +95,12 @@ const Register = () => {
           flexDirection="column"
           justifyContent="center"
           alignItems="center"
-          gap={8}
-          padding={isTabletScreen ? 3 : undefined}
-          sx={{ backgroundColor: "#FFF" }}
+          mx={isTabletScreen ? 0 : 3}
+          gap={isTabletScreen ? 0 : 1}
         >
           <Stack
             alignItems={"flex-start"}
-            padding={isTabletScreen ? undefined : 3}
+            paddingX={isTabletScreen ? undefined : 7}
           >
             <Typography
               marginTop={3}
@@ -116,7 +115,6 @@ const Register = () => {
             <form
               style={{
                 width: "100%",
-                maxWidth: "580px",
                 minWidth: "200px",
               }}
               onSubmit={handleSubmit(onSubmit)}
@@ -342,7 +340,7 @@ const Register = () => {
                 variant="outlined"
                 sx={{
                   textTransform: "none",
-                  marginTop: 3.5,
+                  marginTop: 2.5,
                 }}
               >
                 Login
@@ -351,22 +349,13 @@ const Register = () => {
           </Stack>
           {isTabletScreen ? null : (
             <Box>
-              {/* <Image
-                src="/images/IlustrasiMainMenu.png"
-                width={540}
-                height={650}
-                layout="responsive"
-                objectFit="contain"
+              <img
                 alt="Ilustrasi Main"
-              /> */}
-              <Typography
-                variant="caption"
-                component="div"
-                sx={{ fontSize: 16, color: "#7C8883" }}
-                textAlign="center"
-              >
-                {`© ${thisYear}. All right reserved`}
-              </Typography>
+                src={"/images/Notes.png"}
+                width="100%"
+                height="100%"
+                style={{ objectFit: "contain" }}
+              />
             </Box>
           )}
         </Box>

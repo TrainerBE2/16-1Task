@@ -211,7 +211,7 @@ const Board = () => {
         if (!data.errno) {
           Swal.fire({
             title: "User Added",
-            position: "top-end",
+            position: "bottom-end",
             showConfirmButton: false,
             icon: "success",
             toast: true,

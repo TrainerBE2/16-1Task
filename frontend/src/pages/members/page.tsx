@@ -124,9 +124,10 @@ const Member = () => {
         }
         );
         if (!dataN.errno) {
+          closeModalLeave();
           Swal.fire({
-            title: "Member Removed",
-            position: "top-end",
+            title: role === "owner" || id === dataUser?.user_id ? "Leaving Workspace" : "Member Removed",
+            position: "bottom-end",
             showConfirmButton: false,
             icon: "success",
             toast: true,
@@ -138,7 +139,6 @@ const Member = () => {
             },
           });
           refetch();
-          closeModalLeave();
           if ((role === "owner" || id === dataUser?.user_id)) {
             History.push("/home");
           }

@@ -177,7 +177,7 @@ const Member = () => {
         if (!dataN.errno || !dataT.errno || !dataD.errno) {
           Swal.fire({
             title: "Workspace Updated",
-            position: "top-end",
+            position: "bottom-end",
             showConfirmButton: false,
             icon: "success",
             toast: true,
@@ -220,7 +220,7 @@ const Member = () => {
         if (!data.errno) {
           Swal.fire({
             title: "Workspace Deleted",
-            position: "top-end",
+            position: "bottom-end",
             showConfirmButton: false,
             icon: "success",
             toast: true,

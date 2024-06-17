@@ -1,8 +1,6 @@
-import { Card, Stack, IconButton, CardActionArea, Typography, Box, Chip, Tooltip, AvatarGroup, Avatar, Dialog, DialogTitle, DialogContent, useMediaQuery, useTheme, FormControlLabel, Checkbox, Button, TextField, MenuItem, Menu, LinearProgress, linearProgressClasses, styled, Autocomplete } from "@mui/material";
+import { Card, Stack, IconButton, CardActionArea, Typography, Box, Chip, Tooltip, AvatarGroup, Avatar, Dialog, DialogTitle, DialogContent, useMediaQuery, useTheme, Button, TextField, Menu, LinearProgress, linearProgressClasses, styled, Autocomplete } from "@mui/material";
 import React, { ChangeEvent, useCallback, useMemo, useState } from "react";
-import FavoriteIcon from '@mui/icons-material/Favorite';
 import defaultAxios, { AxiosError } from "axios";
-import FavoriteOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
 import Swal from "sweetalert2";
 import axios from "../../services/axios";
 import { DefaultResponse } from "../../constants/types";
@@ -14,7 +12,9 @@ import useCardComment from "../../services/queries/useCardComment";
 import useCardCover from "../../services/queries/useCardCover";
 import useCardDate from "../../services/queries/useCardDate";
 import useCardLabel from "../../services/queries/useCardLabel";
-import moment from "moment";
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import moment, { Moment } from "moment";
+import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import SubjectIcon from '@mui/icons-material/Subject';
 import CheckBoxOutlinedIcon from '@mui/icons-material/CheckBoxOutlined';
@@ -29,7 +29,9 @@ import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
 import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
 import FormatListBulletedOutlinedIcon from '@mui/icons-material/FormatListBulletedOutlined';
 import useWorkspaceMembers from "../../services/queries/useWorkspaceMembers";
-
+import SendIcon from '@mui/icons-material/Send';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 interface ICardListCardProps {
     id: number;
@@ -51,7 +53,11 @@ const CardListCard = ({
     desc,
 }: ICardListCardProps) => {
     const [isLoading, setLoading] = useState<boolean>(false);
+    const [valueD, setValueD] = React.useState<Moment | null>(moment());
+
     const { workspaceId } = useAuth();
+    const [hoveringItems, setHoveringItems] = useState<number[]>([]);
+    const [hoveringItemsM, setHoveringItemsM] = useState<number[]>([]);
     const theme = useTheme();
     const [displayColorPicker, setDisplayColorPicker] = useState(false);
     const [inviteMember, setInviteMember] = useState();
@@ -62,19 +68,22 @@ const CardListCard = ({
     const { data: dataCardCover, refetch: refetchCardCover } = useCardCover(id);
     const { data: dataCardDate, refetch: refetchCardDate } = useCardDate(id);
     const { data: dataCardLabel, refetch: refetchCardLabel } = useCardLabel(id);
-    const { data: dataMembers, refetch: refetchMembers } = useWorkspaceMembers(workspaceId);
+    const { data: dataMembers } = useWorkspaceMembers(workspaceId);
 
     const [isEdit, setIsEdit] = useState<boolean>(false);
+    const [isPast, setIsPast] = useState<boolean>(false);
     const isPhoneScreen = useMediaQuery(theme.breakpoints.between("xs", "sm"));
     const [isOpenModalListCard, setIsOpenModalListCard] = useState(false);
     const [colorHex, setColorHex] = useState<string>(dataCardCover && dataCardCover.length > 0 && dataCardCover[0].cover ? dataCardCover[0].cover : '');
     const [colorLabel, setColorLabel] = useState<string>('');
     const [checklistCard, setChecklistCard] = useState<string>();
-    const [label, setLabel] = useState<string>();
+    const [label, setLabel] = useState<string>('');
+    const [comment, setComment] = useState<string>('');
     const [description, setDesc] = useState<string>(desc);
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const [anchorElM, setAnchorElM] = React.useState<null | HTMLElement>(null);
     const [anchorElL, setAnchorElL] = React.useState<null | HTMLElement>(null);
+    const [anchorElD, setAnchorElD] = React.useState<null | HTMLElement>(null);
 
     const open = Boolean(anchorEl);
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -100,6 +109,28 @@ const CardListCard = ({
         setAnchorElL(null);
     };
 
+    const openD = Boolean(anchorElD);
+    const handleClickD = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setAnchorElD(event.currentTarget);
+    };
+    const handleCloseD = () => {
+        setAnchorElD(null);
+    };
+
+    function handleHover(index: number, isLeaving: boolean) {
+        setHoveringItems((prevItems) => {
+            if (isLeaving) return prevItems.filter((item) => item !== index);
+            return [...prevItems, index];
+        });
+    }
+
+    function handleHoverM(index: number, isLeaving: boolean) {
+        setHoveringItemsM((prevItems) => {
+            if (isLeaving) return prevItems.filter((item) => item !== index);
+            return [...prevItems, index];
+        });
+    }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const closeModalListCard = () => {
         setIsOpenModalListCard(false);
@@ -113,6 +144,9 @@ const CardListCard = ({
     };
     const handleChangeDesc = (event: ChangeEvent<HTMLInputElement>) => {
         setDesc(event.target.value);
+    };
+    const handleChangeComm = (event: ChangeEvent<HTMLInputElement>) => {
+        setComment(event.target.value);
     };
 
     const handleErrorResponse = useCallback((error: any) => {
@@ -223,11 +257,12 @@ const CardListCard = ({
                 setLoading(false);
             } catch (error) {
                 setLoading(false);
+                closeModalListCard();
                 console.log(error)
                 handleErrorResponse(error);
             }
         },
-        [colorHex, handleErrorResponse, id, refetchs],
+        [closeModalListCard, colorHex, handleErrorResponse, id, refetchs],
     );
 
     const deleteCard = useCallback(
@@ -248,6 +283,7 @@ const CardListCard = ({
                 setLoading(false);
             } catch (error) {
                 setLoading(false);
+                closeModalListCard();
                 console.log(error)
                 handleErrorResponse(error);
             }
@@ -275,11 +311,41 @@ const CardListCard = ({
                 setLoading(false);
             } catch (error) {
                 setLoading(false);
+                closeModalListCard();
+                handleCloseM();
+                console.log(error);
+                handleErrorResponse(error);
+            }
+        },
+        [closeModalListCard, handleErrorResponse, id, inviteMember, refetchs],
+    );
+
+    const addComment = useCallback(
+        async () => {
+            setLoading(true);
+            try {
+                const { data } = await axios.post<DefaultResponse>(
+                    `card/${id}/comment`, {
+                    comment: comment,
+                }, {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }
+                }
+                );
+                if (!data.errno) {
+                    refetchs();
+                    setComment('');
+                }
+                setLoading(false);
+            } catch (error) {
+                setLoading(false);
+                closeModalListCard();
                 console.log(error)
                 handleErrorResponse(error);
             }
         },
-        [handleErrorResponse, id, inviteMember, refetchs],
+        [id, comment, refetchs, closeModalListCard, handleErrorResponse],
     );
 
     const addChecklist = useCallback(
@@ -297,17 +363,48 @@ const CardListCard = ({
                 );
                 if (!data.errno) {
                     refetchs();
-                    setChecklistCard(undefined);
+                    setChecklistCard('');
                     handleClose();
                 }
                 setLoading(false);
             } catch (error) {
                 setLoading(false);
                 console.log(error)
+                closeModalListCard();
+                handleClose();
                 handleErrorResponse(error);
             }
         },
-        [checklistCard, handleErrorResponse, id, refetchs],
+        [checklistCard, closeModalListCard, handleErrorResponse, id, refetchs],
+    );
+
+    const addDate = useCallback(
+        async () => {
+            setLoading(true);
+            try {
+                const { data } = await axios.post<DefaultResponse>(
+                    `card/${id}/date`, {
+                    deadline: moment(valueD).add(1, 'days').format('YYYY-MM-DD'),
+                }, {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }
+                }
+                );
+                if (!data.errno) {
+                    refetchs();
+                    handleCloseD();
+                }
+                setLoading(false);
+            } catch (error) {
+                setLoading(false);
+                closeModalListCard();
+                handleCloseD();
+                console.log(error)
+                handleErrorResponse(error);
+            }
+        },
+        [closeModalListCard, handleErrorResponse, id, refetchs, valueD],
     );
 
     const addLabel = useCallback(
@@ -326,17 +423,48 @@ const CardListCard = ({
                 );
                 if (!data.errno) {
                     refetchs();
-                    setLabel(undefined);
+                    setLabel('');
                     handleCloseL();
                 }
                 setLoading(false);
             } catch (error) {
                 setLoading(false);
+                closeModalListCard();
+                handleCloseL();
                 console.log(error)
                 handleErrorResponse(error);
             }
         },
-        [colorLabel, handleErrorResponse, id, label, refetchs],
+        [closeModalListCard, colorLabel, handleErrorResponse, id, label, refetchs],
+    );
+
+    const updateDate = useCallback(
+        async (ids: number) => {
+            setLoading(true);
+            try {
+                const { data } = await axios.put<DefaultResponse>(
+                    `card/${id}/date/${ids}`, {
+                    deadline: moment(valueD).add(1, 'days').format('YYYY-MM-DD'),
+                }, {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }
+                }
+                );
+                if (!data.errno) {
+                    refetchs();
+                    handleCloseD();
+                }
+                setLoading(false);
+            } catch (error) {
+                setLoading(false);
+                closeModalListCard();
+                handleCloseD();
+                console.log(error)
+                handleErrorResponse(error);
+            }
+        },
+        [closeModalListCard, handleErrorResponse, id, refetchs, valueD],
     );
 
     const doneChecklist = useCallback(
@@ -356,11 +484,12 @@ const CardListCard = ({
                 setLoading(false);
             } catch (error) {
                 setLoading(false);
+                closeModalListCard();
                 console.log(error)
                 handleErrorResponse(error);
             }
         },
-        [handleErrorResponse, id, refetchs],
+        [closeModalListCard, handleErrorResponse, id, refetchs],
     );
 
     const updateDesc = useCallback(
@@ -383,11 +512,12 @@ const CardListCard = ({
                 setLoading(false);
             } catch (error) {
                 setLoading(false);
+                closeModalListCard();
                 console.log(error)
                 handleErrorResponse(error);
             }
         },
-        [description, handleErrorResponse, id, idList, refetch],
+        [closeModalListCard, description, handleErrorResponse, id, idList, refetch],
     );
 
     const unDoneChecklist = useCallback(
@@ -407,11 +537,12 @@ const CardListCard = ({
                 setLoading(false);
             } catch (error) {
                 setLoading(false);
+                closeModalListCard();
                 console.log(error)
                 handleErrorResponse(error);
             }
         },
-        [handleErrorResponse, id, refetchs],
+        [closeModalListCard, handleErrorResponse, id, refetchs],
     );
 
     const deleteChecklist = useCallback(
@@ -431,11 +562,112 @@ const CardListCard = ({
                 setLoading(false);
             } catch (error) {
                 setLoading(false);
+                closeModalListCard();
                 console.log(error)
                 handleErrorResponse(error);
             }
         },
-        [handleErrorResponse, id, refetchs],
+        [closeModalListCard, handleErrorResponse, id, refetchs],
+    );
+
+    const deleteComment = useCallback(
+        async (ids: number) => {
+            setLoading(true);
+            try {
+                const { data } = await axios.delete<DefaultResponse>(
+                    `card/${id}/comment/${ids}`, {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }
+                }
+                );
+                if (!data.errno) {
+                    refetchs();
+                }
+                setLoading(false);
+            } catch (error) {
+                setLoading(false);
+                closeModalListCard();
+                console.log(error)
+                handleErrorResponse(error);
+            }
+        },
+        [closeModalListCard, handleErrorResponse, id, refetchs],
+    );
+
+    const deleteDate = useCallback(
+        async (ids: number) => {
+            setLoading(true);
+            try {
+                const { data } = await axios.delete<DefaultResponse>(
+                    `card/${id}/date/${ids}`, {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }
+                }
+                );
+                if (!data.errno) {
+                    refetchs();
+                }
+                setLoading(false);
+            } catch (error) {
+                setLoading(false);
+                closeModalListCard();
+                console.log(error)
+                handleErrorResponse(error);
+            }
+        },
+        [closeModalListCard, handleErrorResponse, id, refetchs],
+    );
+
+    const deleteMember = useCallback(
+        async (ids: number) => {
+            setLoading(true);
+            try {
+                const { data } = await axios.delete<DefaultResponse>(
+                    `card/${id}/member/${ids}`, {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }
+                }
+                );
+                if (!data.errno) {
+                    refetchs();
+                }
+                setLoading(false);
+            } catch (error) {
+                setLoading(false);
+                closeModalListCard();
+                console.log(error)
+                handleErrorResponse(error);
+            }
+        },
+        [closeModalListCard, handleErrorResponse, id, refetchs],
+    );
+
+    const deleteLabel = useCallback(
+        async (ids: number) => {
+            setLoading(true);
+            try {
+                const { data } = await axios.delete<DefaultResponse>(
+                    `card/${id}/label/${ids}`, {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }
+                }
+                );
+                if (!data.errno) {
+                    refetchs();
+                }
+                setLoading(false);
+            } catch (error) {
+                setLoading(false);
+                closeModalListCard();
+                console.log(error)
+                handleErrorResponse(error);
+            }
+        },
+        [closeModalListCard, handleErrorResponse, id, refetchs],
     );
 
     const updateCover = useCallback(
@@ -457,11 +689,12 @@ const CardListCard = ({
                 setLoading(false);
             } catch (error) {
                 setLoading(false);
+                closeModalListCard();
                 console.log(error)
                 handleErrorResponse(error);
             }
         },
-        [colorHex, handleErrorResponse, id, refetchs],
+        [closeModalListCard, colorHex, handleErrorResponse, id, refetchs],
     );
 
     const BorderLinearProgress = useMemo(
@@ -504,6 +737,18 @@ const CardListCard = ({
             }
         }
     }, [colorHex, dataCardCover, newCover, updateCover]);
+
+    React.useEffect(() => {
+        if (dataCardDate && dataCardDate.length > 0) {
+            setValueD(moment(dataCardDate[0].deadline, 'YYYY-MM-DD'))
+            var dDiff = moment().diff(moment(dataCardDate[0].deadline, 'YYYY-MM-DD'));
+            if (dDiff > 0) {
+                setIsPast(false);
+            } else {
+                setIsPast(true);
+            }
+        }
+    }, [dataCardDate]);
 
     return (
         <Card
@@ -568,7 +813,7 @@ const CardListCard = ({
                                     },
                                 }}
                             >
-                                <Chip icon={<AccessTimeIcon />} size="small" label={`${moment(dataCardDate[0].deadline, 'YYYY-MM-DD').format('MMM DD')}`} sx={{ backgroundColor: "buttonyellow.main", color: 'black', borderRadius: 1 }} />
+                                <Chip icon={<AccessTimeIcon style={{ color: dataCardChecklist && dataCardChecklist.filter((el) => el.status_id === 2).length === dataCardChecklist.length ? 'white' : isPast ? 'black' : 'white' }} />} size="small" label={`${moment(dataCardDate[0].deadline, 'YYYY-MM-DD').format('MMM DD')}`} sx={{ backgroundColor: dataCardChecklist && dataCardChecklist.filter((el) => el.status_id === 2).length === dataCardChecklist.length ? 'buttongreen.main' : isPast ? "buttonyellow.main" : "error.main", color: dataCardChecklist && dataCardChecklist.filter((el) => el.status_id === 2).length === dataCardChecklist.length ? 'white' : isPast ? 'black' : 'white', borderRadius: 1 }} />
                             </Tooltip>}
                             {dataCardChecklist && dataCardChecklist.length > 0 &&
                                 <Stack flexDirection={'row'} alignItems={'center'}>
@@ -742,33 +987,50 @@ const CardListCard = ({
                                                             <Box
                                                                 display="grid"
                                                                 gridTemplateColumns="repeat(6, 1fr)"
-                                                                gap={1}
                                                             >
                                                                 {dataCardMember.map((dat, idx) =>
-                                                                    <Tooltip key={String(idx)} title={dat?.member_username ?? "-"} slotProps={{
-                                                                        popper: {
-                                                                            modifiers: [
-                                                                                {
-                                                                                    name: 'offset',
-                                                                                    options: {
-                                                                                        offset: [0, -14],
+                                                                    <Tooltip onMouseEnter={() => handleHoverM(dat.member_id, false)}
+                                                                        onMouseLeave={() => handleHoverM(dat.member_id, true)} key={String(idx)} title={dat?.member_username ?? "-"} slotProps={{
+                                                                            popper: {
+                                                                                modifiers: [
+                                                                                    {
+                                                                                        name: 'offset',
+                                                                                        options: {
+                                                                                            offset: [0, -14],
+                                                                                        },
                                                                                     },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    }}>
-                                                                        <Avatar
-                                                                            sx={{
-                                                                                backgroundColor: "secondary.main",
-                                                                                width: 32, height: 32,
-                                                                                color: 'white',
-                                                                                borderColor: 'primary.main',
-                                                                                border: 1,
-                                                                            }}
-                                                                            alt={dat?.member_username ?? "-"}
-                                                                        >
-                                                                            {avatarAlt(dat?.member_username ?? "A")}
-                                                                        </Avatar>
+                                                                                ],
+                                                                            },
+                                                                        }}>
+                                                                        <IconButton onClick={() => deleteMember(dat.member_id)} sx={{ p: 0.5 }}>
+                                                                            {hoveringItemsM.includes(dat.member_id) ? (
+                                                                                <Avatar
+                                                                                    sx={{
+                                                                                        backgroundColor: "primary.main",
+                                                                                        width: 32, height: 32,
+                                                                                        color: 'error.main',
+                                                                                        borderColor: 'primary.main',
+                                                                                        border: 1,
+                                                                                    }}
+                                                                                    alt={dat?.member_username ?? "-"}
+                                                                                >
+                                                                                    {avatarAlt(dat?.member_username ?? "A")}
+                                                                                </Avatar>
+                                                                            ) : (
+                                                                                <Avatar
+                                                                                    sx={{
+                                                                                        backgroundColor: "secondary.main",
+                                                                                        width: 32, height: 32,
+                                                                                        color: 'white',
+                                                                                        borderColor: 'primary.main',
+                                                                                        border: 1,
+                                                                                    }}
+                                                                                    alt={dat?.member_username ?? "-"}
+                                                                                >
+                                                                                    {avatarAlt(dat?.member_username ?? "A")}
+                                                                                </Avatar>
+                                                                            )}
+                                                                        </IconButton>
                                                                     </Tooltip>
                                                                 )}
                                                             </Box>
@@ -791,7 +1053,14 @@ const CardListCard = ({
                                                         >
                                                             {dataCardLabel.map((dat, idx) =>
                                                                 <Stack key={String(idx)} flexDirection={'row'}>
-                                                                    <Chip label={dat.label_title} sx={{ backgroundColor: dat.color, color: 'white', borderRadius: 1 }} />
+                                                                    <IconButton onClick={() => deleteLabel(dat.label_id)} sx={{ p: 0.5 }} onMouseEnter={() => handleHover(dat.label_id, false)}
+                                                                        onMouseLeave={() => handleHover(dat.label_id, true)}>
+                                                                        {hoveringItems.includes(dat.label_id) ? (
+                                                                            <Chip label={dat.label_title} sx={{ backgroundColor: 'primary.main', color: 'error.main', borderRadius: 1 }} />
+                                                                        ) : (
+                                                                            <Chip label={dat.label_title} sx={{ backgroundColor: dat.color, color: 'white', borderRadius: 1 }} />
+                                                                        )}
+                                                                    </IconButton>
                                                                 </Stack>
                                                             )}
                                                         </Box>
@@ -808,7 +1077,7 @@ const CardListCard = ({
                                                         Due date
                                                     </Typography>
                                                     <Stack flexDirection={'row'}>
-                                                        <Chip icon={<AccessTimeIcon />} label={`${moment(dataCardDate[0].deadline, 'YYYY-MM-DD').format('DD MMMM YYYY')}`} sx={{ backgroundColor: "buttonyellow.main", color: 'black', borderRadius: 1 }} />
+                                                        <Chip icon={<AccessTimeIcon style={{ color: isPast ? 'black' : 'white' }} />} label={`${moment(dataCardDate[0].deadline, 'YYYY-MM-DD').format('DD MMMM YYYY')}`} sx={{ backgroundColor: isPast ? "buttonyellow.main" : "error.main", color: isPast ? 'black' : 'white', borderRadius: 1 }} />
                                                     </Stack>
                                                 </Stack>}
                                         </Stack>
@@ -1105,9 +1374,54 @@ const CardListCard = ({
                                         </Stack>
                                     </Stack>
                                 </Menu>
-                                <Button variant="contained" size="small" startIcon={<EventOutlinedIcon sx={{ width: 14, height: 14 }} />} sx={{ fontSize: 14, height: 35, width: 171, justifyContent: 'flex-start' }}>
+                                <Button onClick={handleClickD} variant="contained" size="small" startIcon={<EventOutlinedIcon sx={{ width: 14, height: 14 }} />} sx={{ fontSize: 14, height: 35, width: 171, justifyContent: 'flex-start' }}>
                                     Date
                                 </Button>
+                                <Menu
+                                    elevation={0}
+                                    anchorEl={anchorElD}
+                                    open={openD}
+                                    onClose={handleCloseD}
+                                    MenuListProps={{
+                                        "aria-labelledby": "basic-button",
+                                    }}
+                                    sx={{
+                                        "& .MuiPaper-root": {
+                                            borderRadius: 2,
+                                            borderStyle: "solid",
+                                            borderWidth: 1,
+                                            backgroundColor: "white",
+                                            borderColor: "white",
+                                            p: 1,
+                                            marginTop: theme.spacing(0.5),
+                                        },
+                                    }}
+                                >
+                                    <Stack gap={1} >
+                                        <LocalizationProvider dateAdapter={AdapterMoment}>
+                                            <DatePicker
+                                                value={valueD}
+                                                onChange={(newValue) => setValueD(newValue)} />
+                                        </LocalizationProvider>
+                                        <Stack>
+                                            {dataCardDate && dataCardDate.length > 0 ?
+                                                <Stack gap={0.5} flexDirection={'row'} justifyContent={"space-between"}>
+                                                    <Button fullWidth
+                                                        onClick={() => updateDate(dataCardDate[0].id)} sx={{ fontSize: 14, height: 35, mt: 0.5 }} variant="contained" color="buttongreen">
+                                                        Save
+                                                    </Button>
+                                                    <Button fullWidth
+                                                        onClick={() => deleteDate(dataCardDate[0].id)} sx={{ fontSize: 14, height: 35, mt: 0.5 }} variant="contained" color="error">
+                                                        Delete
+                                                    </Button>
+                                                </Stack> :
+                                                <Button fullWidth
+                                                    onClick={addDate} sx={{ fontSize: 14, height: 35, mt: 0.5 }} variant="contained" color="buttongreen">
+                                                    Add Due Date
+                                                </Button>}
+                                        </Stack>
+                                    </Stack>
+                                </Menu>
                             </Stack>
                         </Stack>
                         <Stack gap={2}>
@@ -1135,8 +1449,11 @@ const CardListCard = ({
                                 >
                                     {avatarAlt(namaUser ?? "A")}
                                 </Avatar>
-                                <Stack gap={0.5} flex={1} maxWidth={"454px"}>
+                                <Stack gap={0.5} flex={1} flexDirection={'row'} alignItems={'center'} justifyContent={'space-between'} maxWidth={"454px"}>
                                     <TextField
+                                        value={comment}
+                                        onChange={handleChangeComm}
+                                        fullWidth
                                         hiddenLabel
                                         placeholder="Write a comment..."
                                         variant="filled"
@@ -1181,6 +1498,12 @@ const CardListCard = ({
                                             },
                                         }}
                                     />
+                                    <IconButton
+                                        disabled={comment === ''}
+                                        onClick={addComment} sx={{ color: 'buttongreen.main' }}
+                                    >
+                                        <SendIcon />
+                                    </IconButton>
                                 </Stack>
                             </Stack>
                             {dataCardComment && dataCardComment.length > 0 && dataCardComment.map((dat, idx) =>
@@ -1197,12 +1520,19 @@ const CardListCard = ({
                                     >
                                         {avatarAlt(dat.username ?? "A")}
                                     </Avatar>
-                                    <Stack bgcolor={'primary.main'} borderRadius={2} flex={1} maxWidth={"454px"}>
-                                        <Typography px={2} py={1}
-                                            color={'white'}
+                                    <Stack gap={0.5} flex={1} flexDirection={'row'} alignItems={'center'} justifyContent={'space-between'} maxWidth={"454px"}>
+                                        <Stack bgcolor={'primary.main'} borderRadius={2} flex={1}>
+                                            <Typography px={2} py={1}
+                                                color={'white'}
+                                            >
+                                                {`${dat.comment}`}
+                                            </Typography>
+                                        </Stack>
+                                        <IconButton
+                                            onClick={() => deleteComment(dat.comment_id)} sx={{ color: 'error.main' }}
                                         >
-                                            {`${dat.comment}`}
-                                        </Typography>
+                                            <DeleteIcon />
+                                        </IconButton>
                                     </Stack>
                                 </Stack>
                             )}
